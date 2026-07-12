@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Poster Forge – ein lokales, generatives Designstudio für einzigartige Poster im Browser."
+    />
+    <meta name="theme-color" content="#ede9df" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" href="/poster/icon.svg" type="image/svg+xml" />
+    <title>Poster Forge – Generatives Designstudio</title>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#studio">Zum Studio springen</a>
+
+    <header class="masthead">
+      <a class="brand" href="#top" aria-label="Poster Forge – Startseite">
+        <span>Poster</span><strong>Forge</strong>
+      </a>
+      <p>Generative design instrument <span aria-hidden="true">↗</span></p>
+    </header>
+
+    <main id="top">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">Edition 001 / Browser native</p>
+        <h1 id="page-title">Make some<br /><em>visual noise.</em></h1>
+        <p class="intro__copy">
+          Worte rein. Poster raus. Jede Komposition entsteht lokal, bleibt reproduzierbar und gehört
+          dir.
+        </p>
+      </section>
+
+      <section class="studio" id="studio" aria-labelledby="studio-title" data-studio>
+        <div class="studio__stage">
+          <div class="poster-frame" data-poster-frame>
+            <canvas
+              width="1200"
+              height="1600"
+              data-poster
+              aria-label="Vorschau des generierten Posters"
+            ></canvas>
+            <div class="poster-frame__grain" aria-hidden="true"></div>
+          </div>
+          <div class="stage-meta" aria-hidden="true">
+            <span>1200 × 1600 PX</span>
+            <span data-seed-label>SEED 000000</span>
+          </div>
+        </div>
+
+        <div class="studio__controls">
+          <div class="controls-heading">
+            <div>
+              <p class="eyebrow">Live composition</p>
+              <h2 id="studio-title">Forge controls</h2>
+            </div>
+            <span class="local-badge"><i aria-hidden="true"></i> Local only</span>
+          </div>
+
+          <form data-controls>
+            <div class="field-group">
+              <label for="poster-title">Headline</label>
+              <input
+                id="poster-title"
+                name="title"
+                type="text"
+                value="MAKE NOISE"
+                maxlength="32"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="poster-subtitle">Subline</label>
+              <input
+                id="poster-subtitle"
+                name="subtitle"
+                type="text"
+                value="GENERATIVE EDITION / 001"
+                maxlength="48"
+                autocomplete="off"
+              />
+            </div>
+
+            <fieldset class="choice-group">
+              <legend>System</legend>
+              <div class="segmented">
+                <label>
+                  <input type="radio" name="style" value="grid" checked />
+                  <span>Grid</span>
+                </label>
+                <label>
+                  <input type="radio" name="style" value="orbit" />
+                  <span>Orbit</span>
+                </label>
+                <label>
+                  <input type="radio" name="style" value="signal" />
+                  <span>Signal</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="choice-group">
+              <legend>Palette</legend>
+              <div class="palette-list">
+                <label class="palette palette--acid">
+                  <input type="radio" name="palette" value="acid" checked />
+                  <span><i></i><i></i><i></i><b>Acid</b></span>
+                </label>
+                <label class="palette palette--ink">
+                  <input type="radio" name="palette" value="ink" />
+                  <span><i></i><i></i><i></i><b>Ink</b></span>
+                </label>
+                <label class="palette palette--solar">
+                  <input type="radio" name="palette" value="solar" />
+                  <span><i></i><i></i><i></i><b>Solar</b></span>
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="field-group field-group--range">
+              <label for="intensity"
+                >Intensity <output for="intensity" data-intensity>72</output></label
+              >
+              <input id="intensity" name="intensity" type="range" min="20" max="100" value="72" />
+            </div>
+
+            <div class="action-grid">
+              <button class="button button--primary" type="button" data-remix>
+                <span>Remix poster</span><span aria-hidden="true">↻</span>
+              </button>
+              <button class="button" type="button" data-download>
+                <span>Export PNG</span><span aria-hidden="true">↓</span>
+              </button>
+            </div>
+          </form>
+
+          <p class="privacy-note">
+            Keine Uploads, kein Tracking. Text und Grafik verlassen deinen Browser nicht.
+          </p>
+          <p class="sr-only" aria-live="polite" data-status></p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Poster Forge / 2026</span>
+      <span>Built with Canvas + TypeScript</span>
+    </footer>
+  </body>
+</html>
