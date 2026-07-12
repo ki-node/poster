@@ -1,6 +1,15 @@
 # Poster Forge
 
-Ein mobile-first Designinstrument für generative Poster. Drei visuelle Systeme, drei Paletten und reproduzierbare Seeds erzeugen vollständig lokal im Browser individuelle Kompositionen. Das Ergebnis lässt sich direkt als PNG exportieren.
+Ein mobile-first Designinstrument für generative Poster. Drei visuelle Systeme, flexible Paletten und reproduzierbare Seeds erzeugen vollständig lokal im Browser individuelle Kompositionen.
+
+Poster Forge bietet:
+
+- Grid-, Orbit- und Signal-Systeme mit eigenen Feinreglern
+- frei editierbare Farben, Typografie, Ausrichtung, Körnung und Bewegung
+- vier Ausgabeformate und hochauflösenden PNG-Export
+- manuell nutzbare Seeds sowie teilbare Konfigurationslinks
+- Remix, vollständige Zufallskompositionen, Sperren, Undo und Redo
+- eine mobile Mini-Vorschau, solange die große Posterfläche außerhalb des Viewports liegt
 
 ## Entwicklung
 
