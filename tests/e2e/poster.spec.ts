@@ -12,7 +12,7 @@ test('remixes a deterministic poster and switches design systems', async ({ page
 
   await page.getByRole('button', { name: 'Remix layout' }).click();
   await expect(seed).not.toHaveText(initialSeed ?? '');
-  await expect(page.locator('[data-status]')).toContainText('Neue Komposition');
+  await expect(page.locator('[data-status]')).toContainText('Layout mit Seed');
 
   await page.getByLabel('Orbit').check();
   await expect(page.getByLabel('Orbit')).toBeChecked();
@@ -88,7 +88,7 @@ test('exports the current composition as a PNG', async ({ page }) => {
 test('keeps a tappable live preview visible beside mobile controls', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'The floating mini poster is a mobile aid.');
 
-  await page.getByRole('heading', { name: 'Forge controls' }).scrollIntoViewIfNeeded();
+  await page.locator('[data-advanced] summary').scrollIntoViewIfNeeded();
   const miniPreview = page.getByRole('button', { name: 'Zur großen Poster-Vorschau springen' });
 
   await expect(miniPreview).toBeVisible();
@@ -109,7 +109,7 @@ test('reflows at 320 CSS pixels without clipping controls', async ({ page }) => 
 
   for (const control of [
     page.getByLabel('Headline'),
-    page.getByLabel('Grid'),
+    page.getByLabel('Grid', { exact: true }),
     page.getByRole('button', { name: 'Remix layout' }),
     page.getByRole('button', { name: 'Export PNG' }),
   ]) {
