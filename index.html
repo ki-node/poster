@@ -42,13 +42,23 @@
               data-poster
               aria-label="Vorschau des generierten Posters"
             ></canvas>
-            <div class="poster-frame__grain" aria-hidden="true"></div>
           </div>
           <div class="stage-meta" aria-hidden="true">
-            <span>1200 × 1600 PX</span>
+            <span data-format-label>1200 × 1600 PX</span>
             <span data-seed-label>SEED 000000</span>
           </div>
         </div>
+
+        <button
+          class="mini-preview"
+          type="button"
+          aria-label="Zur großen Poster-Vorschau springen"
+          data-mini-preview
+          hidden
+        >
+          <canvas width="240" height="320" data-poster-mini aria-hidden="true"></canvas>
+          <span>Live poster</span>
+        </button>
 
         <div class="studio__controls">
           <div class="controls-heading">
@@ -57,6 +67,12 @@
               <h2 id="studio-title">Forge controls</h2>
             </div>
             <span class="local-badge"><i aria-hidden="true"></i> Local only</span>
+          </div>
+
+          <div class="history-bar" aria-label="Bearbeitungsverlauf">
+            <button type="button" data-undo disabled><span aria-hidden="true">←</span> Undo</button>
+            <button type="button" data-redo disabled>Redo <span aria-hidden="true">→</span></button>
+            <button type="button" data-reset>Reset</button>
           </div>
 
           <form data-controls>
@@ -129,12 +145,315 @@
 
             <div class="action-grid">
               <button class="button button--primary" type="button" data-remix>
-                <span>Remix poster</span><span aria-hidden="true">↻</span>
+                <span>Remix layout</span><span aria-hidden="true">↻</span>
+              </button>
+              <button class="button button--surprise" type="button" data-randomize>
+                <span>Surprise me</span><span aria-hidden="true">✦</span>
               </button>
               <button class="button" type="button" data-download>
                 <span>Export PNG</span><span aria-hidden="true">↓</span>
               </button>
             </div>
+
+            <details class="advanced" data-advanced>
+              <summary>
+                <span>Advanced controls</span>
+                <span aria-hidden="true">+</span>
+              </summary>
+
+              <div class="advanced__body">
+                <section class="control-section" aria-labelledby="composition-title">
+                  <div class="control-section__heading">
+                    <p class="eyebrow">01</p>
+                    <h3 id="composition-title">Composition</h3>
+                  </div>
+
+                  <div class="control-grid">
+                    <div class="field-group field-group--seed">
+                      <label for="poster-seed">Seed</label>
+                      <div class="input-action">
+                        <input
+                          id="poster-seed"
+                          name="seed"
+                          type="text"
+                          value="000000"
+                          maxlength="20"
+                          autocomplete="off"
+                          spellcheck="false"
+                        />
+                        <button type="button" data-copy-seed>Copy</button>
+                      </div>
+                    </div>
+
+                    <div class="field-group">
+                      <label for="poster-format">Format</label>
+                      <select id="poster-format" name="format">
+                        <option value="portrait">Poster · 3:4</option>
+                        <option value="square">Square · 1:1</option>
+                        <option value="story">Story · 9:16</option>
+                        <option value="landscape">Landscape · 8:5</option>
+                      </select>
+                    </div>
+
+                    <div class="field-group">
+                      <label for="export-scale">Export resolution</label>
+                      <select id="export-scale" name="exportScale">
+                        <option value="1">Standard</option>
+                        <option value="2">High resolution · 2×</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <fieldset class="choice-group color-controls">
+                    <legend>Custom colors</legend>
+                    <label>
+                      <span>Background</span>
+                      <input type="color" name="background" value="#d6ff00" />
+                    </label>
+                    <label>
+                      <span>Foreground</span>
+                      <input type="color" name="foreground" value="#111111" />
+                    </label>
+                    <label>
+                      <span>Accent</span>
+                      <input type="color" name="accent" value="#ff2f82" />
+                    </label>
+                  </fieldset>
+
+                  <button class="text-button" type="button" data-copy-link>
+                    Copy shareable configuration link <span aria-hidden="true">↗</span>
+                  </button>
+                </section>
+
+                <section class="control-section" aria-labelledby="type-title">
+                  <div class="control-section__heading">
+                    <p class="eyebrow">02</p>
+                    <h3 id="type-title">Typography</h3>
+                  </div>
+
+                  <div class="control-grid">
+                    <div class="field-group">
+                      <label for="font-family">Typeface</label>
+                      <select id="font-family" name="font">
+                        <option value="grotesk">Grotesk</option>
+                        <option value="serif">Editorial serif</option>
+                        <option value="mono">Technical mono</option>
+                      </select>
+                    </div>
+                    <div class="field-group">
+                      <label for="text-align">Alignment</label>
+                      <select id="text-align" name="align">
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="range-grid">
+                    <div class="field-group field-group--range">
+                      <label for="title-scale"
+                        >Type scale
+                        <output for="title-scale" data-output="titleScale">100</output></label
+                      >
+                      <input
+                        id="title-scale"
+                        name="titleScale"
+                        type="range"
+                        min="65"
+                        max="145"
+                        value="100"
+                      />
+                    </div>
+                    <div class="field-group field-group--range">
+                      <label for="line-height"
+                        >Line height
+                        <output for="line-height" data-output="lineHeight">82</output></label
+                      >
+                      <input
+                        id="line-height"
+                        name="lineHeight"
+                        type="range"
+                        min="65"
+                        max="115"
+                        value="82"
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <section class="control-section" aria-labelledby="system-title">
+                  <div class="control-section__heading">
+                    <p class="eyebrow">03</p>
+                    <h3 id="system-title">System tuning</h3>
+                  </div>
+
+                  <div class="range-grid" data-system-controls="grid">
+                    <div class="field-group field-group--range">
+                      <label for="grid-density"
+                        >Grid density
+                        <output for="grid-density" data-output="gridDensity">12</output></label
+                      >
+                      <input
+                        id="grid-density"
+                        name="gridDensity"
+                        type="range"
+                        min="6"
+                        max="20"
+                        value="12"
+                      />
+                    </div>
+                    <div class="field-group field-group--range">
+                      <label for="grid-blocks"
+                        >Blocks
+                        <output for="grid-blocks" data-output="gridBlocks">10</output></label
+                      >
+                      <input
+                        id="grid-blocks"
+                        name="gridBlocks"
+                        type="range"
+                        min="3"
+                        max="22"
+                        value="10"
+                      />
+                    </div>
+                    <div class="field-group field-group--range">
+                      <label for="grid-rotation"
+                        >Rotation
+                        <output for="grid-rotation" data-output="gridRotation">8</output></label
+                      >
+                      <input
+                        id="grid-rotation"
+                        name="gridRotation"
+                        type="range"
+                        min="0"
+                        max="45"
+                        value="8"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="range-grid" data-system-controls="orbit" hidden>
+                    <div class="field-group field-group--range">
+                      <label for="orbit-rings"
+                        >Rings <output for="orbit-rings" data-output="orbitRings">8</output></label
+                      >
+                      <input
+                        id="orbit-rings"
+                        name="orbitRings"
+                        type="range"
+                        min="3"
+                        max="14"
+                        value="8"
+                      />
+                    </div>
+                    <div class="field-group field-group--range">
+                      <label for="orbit-x"
+                        >Horizontal <output for="orbit-x" data-output="orbitX">53</output></label
+                      >
+                      <input id="orbit-x" name="orbitX" type="range" min="20" max="80" value="53" />
+                    </div>
+                    <div class="field-group field-group--range">
+                      <label for="orbit-y"
+                        >Vertical <output for="orbit-y" data-output="orbitY">48</output></label
+                      >
+                      <input id="orbit-y" name="orbitY" type="range" min="20" max="72" value="48" />
+                    </div>
+                  </div>
+
+                  <div class="range-grid" data-system-controls="signal" hidden>
+                    <div class="field-group field-group--range">
+                      <label for="signal-lines"
+                        >Lines
+                        <output for="signal-lines" data-output="signalLines">34</output></label
+                      >
+                      <input
+                        id="signal-lines"
+                        name="signalLines"
+                        type="range"
+                        min="12"
+                        max="64"
+                        value="34"
+                      />
+                    </div>
+                    <div class="field-group field-group--range">
+                      <label for="signal-amplitude"
+                        >Amplitude
+                        <output for="signal-amplitude" data-output="signalAmplitude"
+                          >72</output
+                        ></label
+                      >
+                      <input
+                        id="signal-amplitude"
+                        name="signalAmplitude"
+                        type="range"
+                        min="15"
+                        max="120"
+                        value="72"
+                      />
+                    </div>
+                    <div class="field-group field-group--range">
+                      <label for="signal-frequency"
+                        >Frequency
+                        <output for="signal-frequency" data-output="signalFrequency"
+                          >4</output
+                        ></label
+                      >
+                      <input
+                        id="signal-frequency"
+                        name="signalFrequency"
+                        type="range"
+                        min="1"
+                        max="9"
+                        value="4"
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <section class="control-section" aria-labelledby="finish-title">
+                  <div class="control-section__heading">
+                    <p class="eyebrow">04</p>
+                    <h3 id="finish-title">Finish &amp; motion</h3>
+                  </div>
+
+                  <div class="range-grid">
+                    <div class="field-group field-group--range">
+                      <label for="grain"
+                        >Grain <output for="grain" data-output="grain">18</output></label
+                      >
+                      <input id="grain" name="grain" type="range" min="0" max="60" value="18" />
+                    </div>
+                    <div class="field-group field-group--range">
+                      <label for="motion-speed"
+                        >Motion speed
+                        <output for="motion-speed" data-output="motionSpeed">100</output></label
+                      >
+                      <input
+                        id="motion-speed"
+                        name="motionSpeed"
+                        type="range"
+                        min="25"
+                        max="200"
+                        value="100"
+                      />
+                    </div>
+                  </div>
+
+                  <button class="text-button" type="button" aria-pressed="false" data-pause>
+                    <span data-pause-label>Pause animation</span><span aria-hidden="true">Ⅱ</span>
+                  </button>
+                </section>
+
+                <fieldset class="lock-controls">
+                  <legend>Keep on “Surprise me”</legend>
+                  <label><input type="checkbox" name="lockCopy" checked /> Copy</label>
+                  <label><input type="checkbox" name="lockSystem" /> System</label>
+                  <label><input type="checkbox" name="lockPalette" /> Palette</label>
+                  <label><input type="checkbox" name="lockTuning" /> Tuning</label>
+                </fieldset>
+              </div>
+            </details>
           </form>
 
           <p class="privacy-note">
