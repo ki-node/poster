@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['src/**/*.test.ts'],
-    exclude: ['node_modules/**', 'dist/**', 'portfolio*/**'],
+    include: ['src/**/*.test.ts', 'vite.config.test.ts'],
+    exclude: ['node_modules/**', 'dist/**', 'dist-embedded/**', 'portfolio*/**'],
   },
 });

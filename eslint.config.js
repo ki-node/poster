@@ -7,6 +7,7 @@ export default tseslint.config(
     ignores: [
       'coverage/**',
       'dist/**',
+      'dist-embedded/**',
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',
@@ -37,7 +38,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['*.config.ts', 'tests/**/*.ts'],
+    files: ['*.config.ts', '*.config.test.ts', 'tests/**/*.ts'],
     languageOptions: {
       globals: globals.node,
       parserOptions: {

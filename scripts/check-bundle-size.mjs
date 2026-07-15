@@ -3,7 +3,8 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const budgets = { '.css': 18_000, '.js': 25_000 };
-const assetDirectory = new URL('../dist/assets/', import.meta.url);
+const outputDirectory = process.argv[2] ?? 'dist';
+const assetDirectory = new URL(`../${outputDirectory}/assets/`, import.meta.url);
 const assets = await readdir(assetDirectory);
 
 for (const asset of assets) {
