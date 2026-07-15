@@ -8,18 +8,17 @@ const openInOrbitFrame = async (page: Page, { bridge = true } = {}) => {
   const bridgeScript = bridge
     ? `<script>
         window.__posterExports = [];
+        const sendHostReady = (target) => target?.postMessage({
+          channel: 'orbit-project-bridge',
+          version: 1,
+          projectId: 'poster',
+          type: 'host-ready',
+          capabilities: ['file-export'],
+        }, '*');
         window.addEventListener('message', (event) => {
           const message = event.data;
           if (message?.channel !== 'orbit-project-bridge' || message?.projectId !== 'poster') return;
-          if (message.type === 'project-ready') {
-            event.source.postMessage({
-              channel: 'orbit-project-bridge',
-              version: 1,
-              projectId: 'poster',
-              type: 'host-ready',
-              capabilities: ['file-export'],
-            }, '*');
-          }
+          if (message.type === 'project-ready') sendHostReady(event.source);
           if (message.type === 'file-export') {
             window.__posterExports.push(message);
             event.source.postMessage({
@@ -32,6 +31,9 @@ const openInOrbitFrame = async (page: Page, { bridge = true } = {}) => {
             }, '*');
           }
         });
+        window.addEventListener('load', () => {
+          sendHostReady(document.querySelector('iframe')?.contentWindow);
+        }, { once: true });
       </script>`
     : '';
   await page.setContent(`
@@ -268,11 +270,19 @@ test('keeps seed and configuration clipboard fallbacks independent and repeatabl
     });
   });
   await frame.locator('[data-advanced] summary').click();
+  const clickClearOfPreview = async (button: ReturnType<typeof frame.getByRole>) => {
+    await button.evaluate((element) =>
+      element.scrollIntoView({ block: 'center', inline: 'nearest' }),
+    );
+    await button.click();
+  };
 
-  await frame.getByRole('button', { name: 'Copy', exact: true }).click();
+  await clickClearOfPreview(frame.getByRole('button', { name: 'Copy', exact: true }));
   await expect(frame.locator('[data-status]')).toContainText('Seed');
-  await frame.getByRole('button', { name: 'Copy', exact: true }).click();
-  await frame.getByRole('button', { name: /Copy shareable configuration link/u }).click();
+  await clickClearOfPreview(frame.getByRole('button', { name: 'Copy', exact: true }));
+  await clickClearOfPreview(
+    frame.getByRole('button', { name: /Copy shareable configuration link/u }),
+  );
   await expect(frame.locator('[data-status]')).toContainText('Konfigurationslink');
   expect(
     await frame.locator('html').evaluate(
@@ -293,9 +303,11 @@ test('keeps seed and configuration clipboard fallbacks independent and repeatabl
     ).__clipboardState;
     if (state) state.denied = true;
   });
-  await frame.getByRole('button', { name: 'Copy', exact: true }).click();
+  await clickClearOfPreview(frame.getByRole('button', { name: 'Copy', exact: true }));
   await expect(frame.locator('[data-status]')).toContainText('nicht in die Zwischenablage kopiert');
-  await frame.getByRole('button', { name: /Copy shareable configuration link/u }).click();
+  await clickClearOfPreview(
+    frame.getByRole('button', { name: /Copy shareable configuration link/u }),
+  );
   await expect(frame.locator('[data-status]')).toContainText('nicht in die Zwischenablage kopiert');
 });
 
@@ -322,7 +334,7 @@ test('keeps details focus and reduced motion behavior intact in embedded WebKit'
 });
 
 test('destroys on pagehide and starts cleanly when the iframe is reopened', async ({ page }) => {
-  const frame = await openInOrbitFrame(page);
+  const frame = await openInOrbitFrame(page, { bridge: false });
   const seed = frame.locator('[data-seed-label]');
   const beforeDestroy = await seed.textContent();
 
