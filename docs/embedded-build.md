@@ -7,8 +7,8 @@ die öffentliche GitHub-Pages-Version für `/poster/`. `npm run build:embedded` 
 relocatable Offline-Build in `dist-embedded/`, der später durch einen bewusst festgeschriebenen
 Commit in Orbit übernommen werden kann.
 
-Dieser Pull Request ändert weder `ki-node/ki-node.github.io` noch die Orbit-App und implementiert
-noch keine Host-Bridge.
+Die Orbit-App wird in einem getrennten Pull Request auf den daraus entstehenden vollständigen
+Feature-Commit gepinnt.
 
 ## Kontext und Darstellung
 
@@ -31,6 +31,11 @@ Poster Forge besitzt derzeit keine modalen Dialoge. Erweiterte Einstellungen ver
 `details`-Element; die mobile Mini-Vorschau ist das einzige fixe Overlay. Fokuszustände,
 Tastaturbedienung und `prefers-reduced-motion` gelten in beiden Profilen unverändert.
 
+Die Mini-Vorschau berechnet keine zweite Komposition. Nach jedem kanonischen Renderdurchlauf wird
+das Haupt-Canvas bei identischen Bitmap-Abmessungen per `drawImage` gespiegelt und ausschließlich
+über CSS proportional verkleinert. Typografie, Zeilenumbrüche, Grain und Systemgeometrie bleiben
+damit in allen Formaten pixelgleich; das Seitenverhältnis wird nicht gestreckt.
+
 ## Lifecycle
 
 `mountPosterForge()` besitzt die einmalige Initialisierung pro Dokument. `DOMContentLoaded` und
@@ -39,24 +44,21 @@ der zugehörige `AbortController` entfernt Listener, Observer werden getrennt un
 Animation Frame wird beendet. Ein neu geöffnetes iframe erzeugt anschließend genau eine frische
 Instanz, ohne Handler aus einem entfernten Dokument weiterzuführen.
 
-## Browser-Aktionen und spätere Bridge
+## Browser-Aktionen und Export-Bridge
 
-PNG-Download und Zwischenablage liegen hinter der kleinen `PosterActions`-Schnittstelle. In diesem
-Stand implementiert sie ausschließlich sichere Browser-Fallbacks. Fehlt Clipboard-Zugriff oder ein
-Host vollständig, entsteht kein Laufzeitfehler; Poster Forge bleibt als normale Website nutzbar.
+PNG-Export und Zwischenablage liegen hinter der kleinen `PosterActions`-Schnittstelle. Im
+Web-Kontext bleibt der bestehende Blob-/Anchor-Download unverändert. Der Embedded-Kontext navigiert
+nie zu einer Blob-URL: Er verwendet ausschließlich die optionale, versionierte Export-Bridge oder
+zeigt bei fehlendem Host eine verständliche Statusmeldung. Clipboard bleibt davon getrennt beim
+kontrollierten Browser-Fallback.
 
-Für eine spätere, optionale und versionierte Orbit-Nachrichtenbrücke kommen zentral infrage:
-
-- PNG-Dateiexport an den nativen Dateidialog beziehungsweise das Teilen-Menü,
-- Schreiben von Seed oder Konfigurationslink in die native Zwischenablage,
-- Teilen von PNG und/oder Konfigurationslink,
-- kontrolliertes Öffnen späterer externer HTTPS-Links.
-
-Eine solche Bridge muss Projektkennung, Protokollversion, Nachrichtentyp, Quelle und Payload strikt
-validieren. Sie darf nur zusätzliche Fähigkeiten anbieten; bei fehlendem Host müssen die heutigen
-Web-Fallbacks erhalten bleiben. Binärdaten brauchen vor der Implementierung ein bewusstes,
-größenbegrenztes Transfermodell. Deshalb wird in diesem PR kein Orbit-spezifisches `postMessage`-
-Schema vorweggenommen.
+Das Nachrichtenprotokoll verwendet den Kanal `orbit-project-bridge`, Version `1`, Projektkennung
+`poster` und die Typen `project-ready`, `host-ready`, `file-export` sowie `file-export-result`.
+`file-export` enthält genau einen nutzerinitiierten PNG-Export mit Request-ID, vorgeschlagenem
+Dateinamen, MIME-Typ `image/png`, erwarteter Bytezahl und einem transferierten `ArrayBuffer`.
+Data-URLs und Base64 werden zwischen iframe und Host nicht verwendet. Antworten werden nur vom
+Parent-Fenster und mit exakt passendem Schema akzeptiert. Beim `pagehide` werden Listener, Timeouts
+und ausstehende Requests vollständig bereinigt.
 
 ## Offline-Garantie und Provenienz
 
@@ -82,5 +84,5 @@ denselben sauberen Commit erneut und vergleicht Pfade sowie SHA-256-Inhaltswerte
 - Festschreiben des finalen Poster-Commits in Orbits Projekt-Lockdatei.
 - Kopieren und Offline-Validieren des Artefakts im Orbit-Repository.
 - Physischer Test im echten Orbit-iframe auf dem iPhone.
-- Entwurf und Sicherheitsreview einer versionierten Host-Bridge für Export, Clipboard, Share und
-  externe Links.
+- Gegebenenfalls spätere, getrennte Bridge-Erweiterungen für Clipboard, Share von Links und externe
+  Links.

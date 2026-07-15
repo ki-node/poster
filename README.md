@@ -9,7 +9,7 @@ Poster Forge bietet:
 - vier Ausgabeformate und hochauflösenden PNG-Export
 - manuell nutzbare Seeds sowie teilbare Konfigurationslinks
 - Remix, vollständige Zufallskompositionen, Sperren, Undo und Redo
-- eine mobile Mini-Vorschau, solange die große Posterfläche außerhalb des Viewports liegt
+- eine pixelgleiche, proportional skalierte Mini-Vorschau der kanonischen Posterfläche
 
 ## Entwicklung
 
@@ -52,6 +52,11 @@ Das Embedded-Profil entfernt nur die öffentliche Intro-/Masthead-Chrome und ber
 iframe-, Viewport- und Safe-Area-Grenzen. Gestaltung und Verhalten des Pages-Profils bleiben
 unverändert. Weitere Details stehen unter
 [`docs/embedded-build.md`](docs/embedded-build.md).
+
+Im öffentlichen Web-Kontext bleibt der PNG-Download ein normaler Browser-Download. Im
+Embedded-Kontext wird ein PNG optional als `ArrayBuffer` über die versionierte Orbit-Bridge an den
+Host übergeben. Fehlt der Host, wird der iframe nicht zur Blob-Datei navigiert; stattdessen erscheint
+eine kontrollierte Statusmeldung. Clipboard verwendet weiterhin den unabhängigen Browser-Fallback.
 
 ## Qualität
 

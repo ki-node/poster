@@ -10,7 +10,10 @@ import {
   type PosterSettings,
   type PosterStyle,
 } from './poster-renderer';
-import { createBrowserPosterActions, type PosterActions } from './browser-actions';
+import type { PosterActions, PosterExportOutcome } from './browser-actions';
+import { readAppContext } from './app-context';
+import { createPosterActions } from './orbit-bridge';
+import { mirrorPosterPreview } from './poster-preview';
 
 const styles: readonly PosterStyle[] = ['grid', 'orbit', 'signal'];
 const palettes: readonly Exclude<PosterPalette, 'custom'>[] = ['acid', 'ink', 'solar'];
@@ -87,7 +90,7 @@ export class PosterStudio {
   private initialized = false;
   private destroyed = false;
 
-  constructor(private readonly actions: PosterActions = createBrowserPosterActions()) {}
+  constructor(private readonly actions: PosterActions = createPosterActions(readAppContext())) {}
 
   init() {
     if (this.initialized || this.destroyed) return;
@@ -97,6 +100,7 @@ export class PosterStudio {
     this.miniContext = this.miniCanvas?.getContext('2d') ?? null;
     if (!this.context) return;
     this.initialized = true;
+    this.actions.init();
 
     const signal = this.abortController.signal;
     const urlSettings = this.readUrlSettings();
@@ -143,6 +147,7 @@ export class PosterStudio {
     this.abortController.abort();
     this.observers.forEach((observer) => observer.disconnect());
     this.stopAnimation();
+    this.actions.destroy();
     if (this.miniPreview) this.miniPreview.hidden = true;
   }
 
@@ -289,19 +294,29 @@ export class PosterStudio {
         return;
       }
 
-      const downloaded = this.actions.downloadFile(
+      void this.finishExport(
         blob,
         `poster-forge-${settings.seed}-${settings.format}.png`,
-      );
-      if (!downloaded) {
-        this.status?.replaceChildren('Der PNG-Export konnte nicht gespeichert werden.');
-        return;
-      }
-      this.status?.replaceChildren(
-        `Poster als ${String(exportCanvas.width)} × ${String(exportCanvas.height)} PNG exportiert.`,
+        exportCanvas.width,
+        exportCanvas.height,
       );
     }, 'image/png');
   };
+
+  private async finishExport(blob: Blob, filename: string, width: number, height: number) {
+    const outcome = await this.actions.exportPng(blob, filename);
+    if (this.destroyed) return;
+
+    const messages: Record<PosterExportOutcome, string> = {
+      downloaded: `Poster als ${String(width)} × ${String(height)} PNG exportiert.`,
+      shared: `Poster als ${String(width)} × ${String(height)} PNG an Orbit übergeben.`,
+      cancelled: 'PNG-Export abgebrochen.',
+      unavailable:
+        'PNG-Export ist in der eingebetteten Ansicht nur mit einem verfügbaren Orbit-Host möglich.',
+      failed: 'Der PNG-Export konnte nicht gespeichert oder geteilt werden.',
+    };
+    this.status?.replaceChildren(messages[outcome]);
+  }
 
   private readonly animate = (timestamp: number) => {
     if (timestamp - this.lastPaint >= 100) {
@@ -324,15 +339,8 @@ export class PosterStudio {
     }
     renderPoster(this.context, settings, phase);
 
-    if (this.miniCanvas && this.miniContext) {
-      const miniWidth = 240;
-      const miniHeight = Math.round((format.height / format.width) * miniWidth);
-      if (this.miniCanvas.width !== miniWidth || this.miniCanvas.height !== miniHeight) {
-        this.miniCanvas.width = miniWidth;
-        this.miniCanvas.height = miniHeight;
-      }
-      renderPoster(this.miniContext, settings, phase);
-    }
+    if (this.miniCanvas && this.miniContext)
+      mirrorPosterPreview(this.canvas, this.miniCanvas, this.miniContext);
 
     this.seedLabel?.replaceChildren(`SEED ${settings.seed}`);
     this.formatLabel?.replaceChildren(`${String(format.width)} × ${String(format.height)} PX`);

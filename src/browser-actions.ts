@@ -1,7 +1,11 @@
 export interface PosterActions {
+  init(): void;
+  destroy(): void;
   copyText(text: string): Promise<boolean>;
-  downloadFile(blob: Blob, filename: string): boolean;
+  exportPng(blob: Blob, filename: string): Promise<PosterExportOutcome>;
 }
+
+export type PosterExportOutcome = 'downloaded' | 'shared' | 'cancelled' | 'unavailable' | 'failed';
 
 interface DownloadLink {
   download: string;
@@ -11,13 +15,14 @@ interface DownloadLink {
 
 interface BrowserActionsEnvironment {
   clipboard?: Pick<Clipboard, 'writeText'>;
+  getClipboard?(): Pick<Clipboard, 'writeText'> | undefined;
   createDownloadLink(): DownloadLink;
   createObjectURL(blob: Blob): string;
   revokeObjectURL(url: string): void;
 }
 
 const defaultEnvironment = (): BrowserActionsEnvironment => ({
-  clipboard: navigator.clipboard,
+  getClipboard: () => navigator.clipboard,
   createDownloadLink: () => document.createElement('a'),
   createObjectURL: (blob) => URL.createObjectURL(blob),
   revokeObjectURL: (url) => URL.revokeObjectURL(url),
@@ -27,17 +32,20 @@ const defaultEnvironment = (): BrowserActionsEnvironment => ({
 export const createBrowserPosterActions = (
   environment: BrowserActionsEnvironment = defaultEnvironment(),
 ): PosterActions => ({
+  init() {},
+  destroy() {},
   async copyText(text) {
-    if (!environment.clipboard) return false;
+    const clipboard = environment.getClipboard?.() ?? environment.clipboard;
+    if (!clipboard) return false;
 
     try {
-      await environment.clipboard.writeText(text);
+      await clipboard.writeText(text);
       return true;
     } catch {
       return false;
     }
   },
-  downloadFile(blob, filename) {
+  exportPng(blob, filename) {
     let url: string | undefined;
 
     try {
@@ -46,9 +54,9 @@ export const createBrowserPosterActions = (
       link.download = filename;
       link.href = url;
       link.click();
-      return true;
+      return Promise.resolve('downloaded');
     } catch {
-      return false;
+      return Promise.resolve('failed');
     } finally {
       if (url) environment.revokeObjectURL(url);
     }

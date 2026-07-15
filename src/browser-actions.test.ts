@@ -38,12 +38,12 @@ describe('browser poster actions', () => {
     await expect(actions.copyText('SEED-42')).resolves.toBe(false);
   });
 
-  it('downloads a Blob with the normal browser API and always revokes its URL', () => {
+  it('downloads a Blob with the normal browser API and always revokes its URL', async () => {
     const { environment, link, revokeObjectURL } = createEnvironment();
     const actions = createBrowserPosterActions(environment);
     const blob = new Blob(['poster'], { type: 'image/png' });
 
-    expect(actions.downloadFile(blob, 'poster.png')).toBe(true);
+    await expect(actions.exportPng(blob, 'poster.png')).resolves.toBe('downloaded');
     expect(link.download).toBe('poster.png');
     expect(link.href).toBe('blob:poster');
     expect(link.click).toHaveBeenCalledOnce();
