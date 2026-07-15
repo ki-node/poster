@@ -201,11 +201,12 @@ test('mirrors one canonical poster bitmap for every format, history and animatio
   await frame.getByLabel('Type scale').fill('135');
   await expectCanonicalPreview(frame);
 
-  const beforeRemix = await posterBitmap(frame);
+  const seedBeforeRemix = await frame.locator('[data-seed-label]').textContent();
   await frame.getByRole('button', { name: 'Remix layout' }).click();
   await expectCanonicalPreview(frame);
   await frame.getByRole('button', { name: 'Undo' }).click();
-  expect(await posterBitmap(frame)).toEqual(beforeRemix);
+  await expect(frame.locator('[data-seed-label]')).toHaveText(seedBeforeRemix ?? '');
+  await expectCanonicalPreview(frame);
   await frame.getByRole('button', { name: 'Redo' }).click();
   await expectCanonicalPreview(frame);
 

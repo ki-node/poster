@@ -54,7 +54,8 @@ unverändert. Weitere Details stehen unter
 [`docs/embedded-build.md`](docs/embedded-build.md).
 
 Im öffentlichen Web-Kontext bleibt der PNG-Download ein normaler Browser-Download. Im
-Embedded-Kontext wird ein PNG optional als `ArrayBuffer` über die versionierte Orbit-Bridge an den
+Embedded-Kontext wird ein PNG optional als strukturiert klonbarer `ArrayBuffer` über die
+versionierte Orbit-Bridge an den
 Host übergeben. Fehlt der Host, wird der iframe nicht zur Blob-Datei navigiert; stattdessen erscheint
 eine kontrollierte Statusmeldung. Clipboard verwendet weiterhin den unabhängigen Browser-Fallback.
 

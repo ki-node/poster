@@ -55,7 +55,8 @@ kontrollierten Browser-Fallback.
 Das Nachrichtenprotokoll verwendet den Kanal `orbit-project-bridge`, Version `1`, Projektkennung
 `poster` und die Typen `project-ready`, `host-ready`, `file-export` sowie `file-export-result`.
 `file-export` enthält genau einen nutzerinitiierten PNG-Export mit Request-ID, vorgeschlagenem
-Dateinamen, MIME-Typ `image/png`, erwarteter Bytezahl und einem transferierten `ArrayBuffer`.
+Dateinamen, MIME-Typ `image/png`, erwarteter Bytezahl und einem strukturiert klonbaren
+`ArrayBuffer`.
 Data-URLs und Base64 werden zwischen iframe und Host nicht verwendet. Antworten werden nur vom
 Parent-Fenster und mit exakt passendem Schema akzeptiert. Beim `pagehide` werden Listener, Timeouts
 und ausstehende Requests vollständig bereinigt.

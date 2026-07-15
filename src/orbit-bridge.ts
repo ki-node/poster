@@ -173,7 +173,7 @@ export const createEmbeddedPosterActions = (
           );
           pending.set(requestId, { resolve, timeout });
         });
-        environment.parentWindow.postMessage(message, '*', [data]);
+        environment.parentWindow.postMessage(message, '*');
         return await result;
       } catch {
         return 'failed';

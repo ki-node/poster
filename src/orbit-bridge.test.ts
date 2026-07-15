@@ -49,17 +49,16 @@ const hostReady = {
 } as const;
 
 describe('Orbit poster export adapter', () => {
-  it('announces itself and sends one transferable binary export to a verified host', async () => {
+  it('announces itself and sends one structured-clone binary export to a verified host', async () => {
     const { actions, dispatch, parentWindow } = createHarness();
     actions.init();
     dispatch(hostReady);
 
     const result = actions.exportPng(new Blob(['png'], { type: 'image/png' }), 'poster.png');
     await vi.waitFor(() => expect(parentWindow.postMessage).toHaveBeenCalledTimes(2));
-    const [message, origin, transfer] = parentWindow.postMessage.mock.calls[1] as [
+    const [message, origin] = parentWindow.postMessage.mock.calls[1] as [
       PosterFileExportMessage,
       string,
-      ArrayBuffer[],
     ];
     expect(message).toMatchObject({
       channel: ORBIT_BRIDGE_CHANNEL,
@@ -73,7 +72,6 @@ describe('Orbit poster export adapter', () => {
     });
     expect(message.data).toBeInstanceOf(ArrayBuffer);
     expect(origin).toBe('*');
-    expect(transfer).toEqual([message.data]);
 
     dispatch({
       channel: ORBIT_BRIDGE_CHANNEL,
