@@ -10,6 +10,7 @@ import {
   type PosterSettings,
   type PosterStyle,
 } from './poster-renderer';
+import { createBrowserPosterActions, type PosterActions } from './browser-actions';
 
 const styles: readonly PosterStyle[] = ['grid', 'orbit', 'signal'];
 const palettes: readonly Exclude<PosterPalette, 'custom'>[] = ['acid', 'ink', 'solar'];
@@ -83,13 +84,19 @@ export class PosterStudio {
   private controlsVisible = false;
   private history: PosterSettings[] = [];
   private historyIndex = -1;
+  private initialized = false;
+  private destroyed = false;
+
+  constructor(private readonly actions: PosterActions = createBrowserPosterActions()) {}
 
   init() {
+    if (this.initialized || this.destroyed) return;
     if (!this.root || !this.form || !this.canvas) return;
 
     this.context = this.canvas.getContext('2d');
     this.miniContext = this.miniCanvas?.getContext('2d') ?? null;
     if (!this.context) return;
+    this.initialized = true;
 
     const signal = this.abortController.signal;
     const urlSettings = this.readUrlSettings();
@@ -131,6 +138,8 @@ export class PosterStudio {
   }
 
   destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
     this.abortController.abort();
     this.observers.forEach((observer) => observer.disconnect());
     this.stopAnimation();
@@ -280,12 +289,14 @@ export class PosterStudio {
         return;
       }
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = `poster-forge-${settings.seed}-${settings.format}.png`;
-      link.href = url;
-      link.click();
-      URL.revokeObjectURL(url);
+      const downloaded = this.actions.downloadFile(
+        blob,
+        `poster-forge-${settings.seed}-${settings.format}.png`,
+      );
+      if (!downloaded) {
+        this.status?.replaceChildren('Der PNG-Export konnte nicht gespeichert werden.');
+        return;
+      }
       this.status?.replaceChildren(
         `Poster als ${String(exportCanvas.width)} × ${String(exportCanvas.height)} PNG exportiert.`,
       );
@@ -589,14 +600,20 @@ export class PosterStudio {
 
   private async copySeed() {
     const seed = this.getSettings().seed;
-    await navigator.clipboard.writeText(seed);
-    this.status?.replaceChildren(`Seed ${seed} kopiert.`);
+    const copied = await this.actions.copyText(seed);
+    this.status?.replaceChildren(
+      copied ? `Seed ${seed} kopiert.` : 'Seed konnte nicht in die Zwischenablage kopiert werden.',
+    );
   }
 
   private async copyLink() {
     this.syncUrl(this.getSettings());
-    await navigator.clipboard.writeText(window.location.href);
-    this.status?.replaceChildren('Teilbarer Konfigurationslink kopiert.');
+    const copied = await this.actions.copyText(window.location.href);
+    this.status?.replaceChildren(
+      copied
+        ? 'Teilbarer Konfigurationslink kopiert.'
+        : 'Link konnte nicht in die Zwischenablage kopiert werden.',
+    );
   }
 
   private createSeed() {

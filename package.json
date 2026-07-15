@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build && npm run budget",
+    "build:embedded": "npm run check:clean-source && npm run typecheck && vite build --mode embedded && npm run budget:embedded",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "npm run lint:ts && npm run lint:css",
@@ -18,10 +19,14 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "test": "vitest run",
-    "test:e2e": "npm run build && playwright test",
+    "test:e2e": "npm run build && npm run build:embedded && playwright test",
     "test:e2e:ci": "playwright test",
-    "check": "npm run format:check && npm run lint && npm run test && npm run build",
-    "budget": "node scripts/check-bundle-size.mjs"
+    "check": "npm run format:check && npm run lint && npm run test && npm run build && npm run build:embedded && npm run test:builds",
+    "budget": "node scripts/check-bundle-size.mjs",
+    "budget:embedded": "node scripts/check-bundle-size.mjs dist-embedded",
+    "check:clean-source": "node scripts/assert-clean-build-source.mjs",
+    "test:builds": "node scripts/check-build-output.mjs",
+    "test:reproducible": "node scripts/check-reproducible-build.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",

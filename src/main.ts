@@ -1,7 +1,6 @@
 import './styles.css';
-import { PosterStudio } from './poster-studio';
+import { readAppContext } from './app-context';
+import { mountPosterForge } from './app-lifecycle';
 
-const studio = new PosterStudio();
-studio.init();
-
-window.addEventListener('pagehide', () => studio.destroy(), { once: true });
+readAppContext();
+mountPosterForge();

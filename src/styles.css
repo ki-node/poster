@@ -9,6 +9,12 @@
   --pink: #ff2f82;
   --line: rgba(21, 21, 21, 0.24);
   --page: clamp(1rem, 4vw, 4rem);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --page-right: max(var(--page), var(--safe-right));
+  --page-left: max(var(--page), var(--safe-left));
 }
 
 *,
@@ -84,7 +90,7 @@ label {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem var(--page);
+  padding: max(1rem, var(--safe-top)) var(--page-right) 1rem var(--page-left);
   border-bottom: 1px solid var(--ink);
 }
 
@@ -117,7 +123,7 @@ label {
 .intro {
   position: relative;
   min-height: min(44rem, 82svh);
-  padding: clamp(4rem, 10vw, 9rem) var(--page) 3rem;
+  padding: clamp(4rem, 10vw, 9rem) var(--page-right) 3rem var(--page-left);
   border-bottom: 1px solid var(--ink);
   overflow: hidden;
 }
@@ -203,7 +209,8 @@ label {
 
 .studio__stage {
   position: relative;
-  padding: clamp(1rem, 4vw, 3rem);
+  padding: clamp(1rem, 4vw, 3rem) max(clamp(1rem, 4vw, 3rem), var(--safe-right))
+    clamp(1rem, 4vw, 3rem) max(clamp(1rem, 4vw, 3rem), var(--safe-left));
   color: #fff;
   background: #151515;
 }
@@ -237,14 +244,14 @@ label {
 }
 
 .studio__controls {
-  padding: clamp(2rem, 6vw, 5rem) var(--page);
+  padding: clamp(2rem, 6vw, 5rem) var(--page-right) clamp(2rem, 6vw, 5rem) var(--page-left);
 }
 
 .mini-preview {
   position: fixed;
   z-index: 12;
   top: max(0.75rem, env(safe-area-inset-top));
-  right: 0.75rem;
+  right: max(0.75rem, var(--safe-right));
   width: 6rem;
   padding: 0.35rem;
   border: 1px solid #fff;
@@ -739,11 +746,38 @@ footer {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.2rem var(--page);
+  padding: 1.2rem var(--page-right) max(1.2rem, var(--safe-bottom)) var(--page-left);
   font-size: 0.58rem;
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+html[data-app-context='embedded'] {
+  --safe-top: 0px;
+}
+
+html[data-app-context='embedded'],
+html[data-app-context='embedded'] body {
+  min-height: 100%;
+}
+
+html[data-app-context='embedded'] body {
+  overscroll-behavior-y: contain;
+}
+
+html[data-app-context='embedded'] .masthead,
+html[data-app-context='embedded'] .intro {
+  display: none;
+}
+
+html[data-app-context='embedded'] .studio {
+  min-height: 100dvh;
+  scroll-margin-top: 0;
+}
+
+html[data-app-context='embedded'] .mini-preview {
+  top: 0.75rem;
 }
 
 @media (hover: hover) and (pointer: fine) {
