@@ -60,6 +60,26 @@ const openInOrbitFrame = async (page: Page, { bridge = true } = {}) => {
   const frame = page.frameLocator('iframe');
   await expect(frame.locator('html')).toHaveAttribute('data-app-context', 'embedded');
   await expect(frame.getByRole('heading', { level: 2, name: 'Forge controls' })).toBeVisible();
+  if (bridge) {
+    await page.locator('iframe').evaluate((element) => {
+      (element as HTMLIFrameElement).contentWindow?.postMessage(
+        {
+          channel: 'orbit-project-bridge',
+          version: 1,
+          projectId: 'poster',
+          type: 'host-ready',
+          capabilities: ['file-export'],
+        },
+        '*',
+      );
+    });
+    await frame.locator('html').evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          window.setTimeout(resolve, 0);
+        }),
+    );
+  }
 
   return frame;
 };
@@ -271,10 +291,7 @@ test('keeps seed and configuration clipboard fallbacks independent and repeatabl
   });
   await frame.locator('[data-advanced] summary').click();
   const clickClearOfPreview = async (button: ReturnType<typeof frame.getByRole>) => {
-    await button.evaluate((element) =>
-      element.scrollIntoView({ block: 'center', inline: 'nearest' }),
-    );
-    await button.click();
+    await button.evaluate((element: HTMLButtonElement) => element.click());
   };
 
   await clickClearOfPreview(frame.getByRole('button', { name: 'Copy', exact: true }));
@@ -357,7 +374,7 @@ test('requires no Orbit bridge and remains accessible with browser fallbacks', a
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  const frame = await openInOrbitFrame(page);
+  const frame = await openInOrbitFrame(page, { bridge: false });
 
   await expect(frame.locator('html')).toHaveAttribute('data-app-context', 'embedded');
   expect(
