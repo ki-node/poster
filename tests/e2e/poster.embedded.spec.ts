@@ -5,6 +5,7 @@ const embeddedUrl = 'http://127.0.0.1:4174/projects/poster/index.html';
 
 const openInOrbitFrame = async (page: Page, { bridge = true } = {}) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('http://127.0.0.1:4174/projects/poster/ki-node-project.json');
   const bridgeScript = bridge
     ? `<script>
         window.__posterExports = [];
