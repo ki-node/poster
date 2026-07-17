@@ -350,6 +350,7 @@ export class PosterStudio {
         '--poster-aspect-ratio',
         `${String(format.width)} / ${String(format.height)}`,
       );
+      this.previewVisibility?.refresh();
     }
     renderPoster(this.context, settings, phase);
 

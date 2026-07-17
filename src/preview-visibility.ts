@@ -24,6 +24,7 @@ interface PreviewVisibilityOptions {
 export interface PreviewVisibilityController {
   destroy(): void;
   init(): void;
+  refresh(): void;
 }
 
 /** Applies hysteresis so the fallback does not flicker near the visibility boundary. */
@@ -213,5 +214,5 @@ export const createPreviewVisibilityController = ({
     clearStickyPosterSize(posterFrame);
   };
 
-  return { init, destroy };
+  return { init, destroy, refresh: scheduleMeasure };
 };
