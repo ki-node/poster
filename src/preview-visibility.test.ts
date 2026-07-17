@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  calculatePosterDisplaySize,
   canKeepLargePreviewSticky,
   createPreviewVisibilityController,
   shouldShowMiniPreview,
@@ -22,6 +23,15 @@ describe('preview visibility invariant', () => {
     expect(canKeepLargePreviewSticky(844, 286)).toBe(true);
     expect(canKeepLargePreviewSticky(844, 239)).toBe(false);
     expect(canKeepLargePreviewSticky(800, 900)).toBe(false);
+  });
+
+  it('fits all four poster formats without clipping or changing their aspect ratio', () => {
+    for (const aspectRatio of [3 / 4, 1, 9 / 16, 8 / 5]) {
+      const size = calculatePosterDisplaySize(430, 250, aspectRatio, 576);
+      expect(size.width).toBeLessThanOrEqual(430);
+      expect(size.height).toBeLessThanOrEqual(250);
+      expect(size.width / size.height).toBeCloseTo(aspectRatio, 8);
+    }
   });
 
   it('initializes once, reacts to observer state and fully disconnects', () => {
@@ -50,7 +60,12 @@ describe('preview visibility invariant', () => {
       height: 390,
       toJSON: () => undefined,
     };
-    const posterFrame = { getBoundingClientRect: () => rect } as HTMLElement;
+    const posterFrame = {
+      getBoundingClientRect: () => rect,
+      parentElement: null,
+      querySelector: vi.fn(),
+      style: { removeProperty: vi.fn(), setProperty: vi.fn() },
+    } as unknown as HTMLElement;
     const controls = { getBoundingClientRect: () => rect } as HTMLElement;
     const miniPreview = { hidden: true } as HTMLButtonElement;
     const controller = createPreviewVisibilityController({
@@ -112,7 +127,12 @@ describe('preview visibility invariant', () => {
     } as DOMRect;
     const miniPreview = { hidden: true } as HTMLButtonElement;
     const controller = createPreviewVisibilityController({
-      posterFrame: { getBoundingClientRect: () => rect } as HTMLElement,
+      posterFrame: {
+        getBoundingClientRect: () => rect,
+        parentElement: null,
+        querySelector: vi.fn(),
+        style: { removeProperty: vi.fn(), setProperty: vi.fn() },
+      } as unknown as HTMLElement,
       controls: { getBoundingClientRect: () => rect } as HTMLElement,
       miniPreview,
       layoutRoot: { classList } as unknown as HTMLElement,

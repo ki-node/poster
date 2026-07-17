@@ -61,6 +61,53 @@ const intersectionRatio = (target: HTMLElement, targetWindow: Window) => {
   return Math.min(1, (visibleWidth * visibleHeight) / (rect.width * rect.height));
 };
 
+const numberValue = (value: string) => Number.parseFloat(value) || 0;
+
+export const calculatePosterDisplaySize = (
+  availableWidth: number,
+  availableHeight: number,
+  aspectRatio: number,
+  maximumWidth: number,
+) => {
+  const width = Math.max(1, Math.min(availableWidth, availableHeight * aspectRatio, maximumWidth));
+  return { width, height: width / aspectRatio };
+};
+
+const fitStickyPoster = (posterFrame: HTMLElement, targetWindow: Window) => {
+  const stage = posterFrame.parentElement;
+  const canvas = posterFrame.querySelector<HTMLCanvasElement>('canvas');
+  if (!stage || !canvas || canvas.width <= 0 || canvas.height <= 0) return;
+
+  const stageStyle = targetWindow.getComputedStyle(stage);
+  const rootFontSize = numberValue(
+    targetWindow.getComputedStyle(targetWindow.document.documentElement).fontSize,
+  );
+  const metadata = stage.querySelector<HTMLElement>('.stage-meta');
+  const availableWidth =
+    stage.clientWidth - numberValue(stageStyle.paddingLeft) - numberValue(stageStyle.paddingRight);
+  const availableHeight =
+    stage.clientHeight -
+    numberValue(stageStyle.paddingTop) -
+    numberValue(stageStyle.paddingBottom) -
+    (metadata?.offsetHeight ?? 0) -
+    numberValue(stageStyle.rowGap);
+  const aspectRatio = canvas.width / canvas.height;
+  const size = calculatePosterDisplaySize(
+    availableWidth,
+    availableHeight,
+    aspectRatio,
+    36 * rootFontSize,
+  );
+
+  posterFrame.style.setProperty('--poster-display-width', `${String(size.width)}px`);
+  posterFrame.style.setProperty('--poster-display-height', `${String(size.height)}px`);
+};
+
+const clearStickyPosterSize = (posterFrame: HTMLElement) => {
+  posterFrame.style.removeProperty('--poster-display-width');
+  posterFrame.style.removeProperty('--poster-display-height');
+};
+
 /** Owns the invariant that controls never remain without a useful live poster preview. */
 export const createPreviewVisibilityController = ({
   posterFrame,
@@ -104,6 +151,8 @@ export const createPreviewVisibilityController = ({
         viewport?.height ?? targetWindow.innerHeight,
       );
     layoutRoot?.classList.toggle('studio--sticky-preview', stickyPreviewAvailable);
+    if (stickyPreviewAvailable) fitStickyPoster(posterFrame, targetWindow);
+    else clearStickyPosterSize(posterFrame);
     posterRatio = intersectionRatio(posterFrame, targetWindow);
     controlsVisible = intersectionRatio(controls, targetWindow) > 0;
     update();
@@ -139,6 +188,8 @@ export const createPreviewVisibilityController = ({
     posterObserver.observe(posterFrame);
     controlsObserver.observe(controls);
     resizeObserver.observe(posterFrame);
+    const posterCanvas = posterFrame.querySelector('canvas');
+    if (posterCanvas) resizeObserver.observe(posterCanvas);
     resizeObserver.observe(controls);
     observers.push(posterObserver, controlsObserver, resizeObserver);
 
@@ -159,6 +210,7 @@ export const createPreviewVisibilityController = ({
     miniVisible = false;
     miniPreview.hidden = true;
     layoutRoot?.classList.remove('studio--sticky-preview');
+    clearStickyPosterSize(posterFrame);
   };
 
   return { init, destroy };
