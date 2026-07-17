@@ -32,7 +32,7 @@ html {
 body {
   min-width: 20rem;
   margin: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
   background:
     linear-gradient(90deg, transparent 49.9%, rgba(21, 21, 21, 0.045) 50%, transparent 50.1%)
       center / 4rem 4rem,
