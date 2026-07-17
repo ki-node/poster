@@ -36,13 +36,22 @@ das Haupt-Canvas bei identischen Bitmap-Abmessungen per `drawImage` gespiegelt u
 über CSS proportional verkleinert. Typografie, Zeilenumbrüche, Grain und Systemgeometrie bleiben
 damit in allen Formaten pixelgleich; das Seitenverhältnis wird nicht gestreckt.
 
+Auf breiten Viewports mit ausreichender Höhe bleibt die linke Bühne viewport-hoch und sticky. Das
+Canvas wird anhand seiner intrinsischen Proportionen innerhalb der verfügbaren Höhe skaliert, auch
+für das hohe Story-Format. Auf niedrigen Landscape-Viewports bleibt das Dokument der einzige
+Scroll-Container; sobald weniger als 56 Prozent des großen Posters sichtbar sind, übernimmt die
+Mini-Vorschau. Sie wird erst oberhalb von 72 Prozent wieder ausgeblendet, damit Rotation, schnelles
+Scrollen und Grenzpositionen nicht flackern. `IntersectionObserver`, `ResizeObserver`, Window- und
+Visual-Viewport-Änderungen speisen gemeinsam diese zentrale Sichtbarkeitsinvariante.
+
 ## Lifecycle
 
-`mountPosterForge()` besitzt die einmalige Initialisierung pro Dokument. `DOMContentLoaded` und
-`pagehide` werden an einer Stelle verwaltet. `PosterStudio.init()` und `destroy()` sind idempotent;
-der zugehörige `AbortController` entfernt Listener, Observer werden getrennt und ein laufender
-Animation Frame wird beendet. Ein neu geöffnetes iframe erzeugt anschließend genau eine frische
-Instanz, ohne Handler aus einem entfernten Dokument weiterzuführen.
+`mountPosterForge()` besitzt die einmalige Initialisierung pro Dokument. `DOMContentLoaded`,
+`pagehide` und `pageshow` werden an einer Stelle verwaltet. `PosterStudio.init()` und `destroy()`
+sind idempotent; der zugehörige `AbortController` entfernt Listener, Vorschau- und Resize-Observer
+werden getrennt und ein laufender Animation Frame wird beendet. Eine Wiederherstellung aus dem
+Back-Forward-Cache oder ein neu geöffnetes iframe erzeugt anschließend genau eine frische Instanz,
+ohne Handler aus einem entfernten Dokument weiterzuführen.
 
 ## Browser-Aktionen und Export-Bridge
 

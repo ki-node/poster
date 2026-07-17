@@ -36,6 +36,30 @@ describe('Poster Forge lifecycle', () => {
     expect(app.destroy).toHaveBeenCalledOnce();
   });
 
+  it('creates a fresh application after a pagehide/pageshow restoration', () => {
+    const targetWindow = new EventTarget();
+    const targetDocument = new LifecycleDocument('complete');
+    const apps = [
+      { init: vi.fn(), destroy: vi.fn() },
+      { init: vi.fn(), destroy: vi.fn() },
+    ];
+    let appIndex = 0;
+    const createApp = vi.fn(() => apps[appIndex++] ?? apps[1]!);
+
+    mountPosterForge({
+      targetWindow: targetWindow as unknown as Window,
+      targetDocument: targetDocument as unknown as Document,
+      createApp,
+    });
+    targetWindow.dispatchEvent(new Event('pagehide'));
+    targetWindow.dispatchEvent(new Event('pageshow'));
+    targetWindow.dispatchEvent(new Event('pageshow'));
+
+    expect(createApp).toHaveBeenCalledTimes(2);
+    expect(apps[0]?.destroy).toHaveBeenCalledOnce();
+    expect(apps[1]?.init).toHaveBeenCalledOnce();
+  });
+
   it('prevents late initialization after explicit cleanup', () => {
     const { targetDocument, app, lifecycle } = createHarness('loading');
 

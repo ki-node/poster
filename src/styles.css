@@ -218,6 +218,7 @@ label {
 .poster-frame {
   position: relative;
   width: min(100%, 36rem);
+  aspect-ratio: var(--poster-aspect-ratio, 3 / 4);
   margin: 0 auto;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.35);
@@ -815,8 +816,23 @@ html[data-app-context='embedded'] .mini-preview {
 
   .studio__stage {
     display: grid;
+    width: 100%;
+    height: 100dvh;
+    min-height: 100svh;
+    align-self: start;
     align-content: center;
     border-right: 1px solid var(--ink);
+  }
+
+  .poster-frame {
+    width: fit-content;
+    max-width: min(100%, 36rem);
+  }
+
+  .poster-frame canvas {
+    width: auto;
+    max-width: 100%;
+    max-height: calc(100dvh - 7.5rem);
   }
 
   .studio__controls {
@@ -824,7 +840,9 @@ html[data-app-context='embedded'] .mini-preview {
   }
 
   .mini-preview {
-    display: none !important;
+    right: auto;
+    left: max(0.75rem, var(--safe-left));
+    width: clamp(4.25rem, 10vw, 6rem);
   }
 
   .action-grid {
@@ -843,6 +861,26 @@ html[data-app-context='embedded'] .mini-preview {
   .control-grid > :last-child:nth-child(odd),
   .range-grid > :last-child:nth-child(odd) {
     grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 52rem) and (min-height: 32rem) {
+  .studio__stage {
+    position: sticky;
+    top: 0;
+  }
+}
+
+@media (max-height: 28rem) {
+  .mini-preview {
+    width: 4.5rem;
+    padding: 0.25rem;
+    box-shadow: 0.25rem 0.25rem 0 var(--pink);
+  }
+
+  .mini-preview span {
+    padding-top: 0.2rem;
+    font-size: 0.42rem;
   }
 }
 

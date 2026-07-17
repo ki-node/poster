@@ -3,8 +3,14 @@ import { expect, test, type Page } from '@playwright/test';
 
 const embeddedUrl = 'http://127.0.0.1:4174/projects/poster/index.html';
 
-const openInOrbitFrame = async (page: Page, { bridge = true } = {}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+const openInOrbitFrame = async (
+  page: Page,
+  {
+    bridge = true,
+    viewport = { width: 390, height: 844 },
+  }: { bridge?: boolean; viewport?: { width: number; height: number } } = {},
+) => {
+  await page.setViewportSize(viewport);
   await page.goto('http://127.0.0.1:4174/projects/poster/ki-node-project.json');
   const bridgeScript = bridge
     ? `<script>
@@ -112,6 +118,31 @@ const expectCanonicalPreview = async (frame: ReturnType<Page['frameLocator']>) =
   expect(bitmap.mini).toEqual(bitmap.main);
 };
 
+const previewVisibility = async (frame: ReturnType<Page['frameLocator']>) =>
+  frame.locator('html').evaluate(() => {
+    const visibleRatio = (element: Element) => {
+      const rect = element.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return 0;
+      const width = Math.max(0, Math.min(rect.right, innerWidth) - Math.max(rect.left, 0));
+      const height = Math.max(0, Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0));
+      return (width * height) / (rect.width * rect.height);
+    };
+    const poster = document.querySelector<HTMLElement>('[data-poster-frame]');
+    const mini = document.querySelector<HTMLButtonElement>('[data-mini-preview]');
+    const controls = document.querySelector<HTMLElement>('.studio__controls');
+    const miniRect = mini?.getBoundingClientRect();
+    const controlsRect = controls?.getBoundingClientRect();
+
+    return {
+      posterRatio: poster ? visibleRatio(poster) : 0,
+      miniVisible: Boolean(mini && !mini.hidden && visibleRatio(mini) > 0),
+      miniRight: miniRect?.right ?? 0,
+      controlsLeft: controlsRect?.left ?? 0,
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
+
 test('injects embedded context before scripts and uses only relative local assets', async ({
   request,
 }) => {
@@ -202,6 +233,88 @@ test('keeps preview, seed, remix, undo and redo usable in the mobile iframe', as
   await expect(miniPreview).toBeVisible();
   await miniPreview.click();
   await expect(frame.locator('[data-poster-frame]')).toBeInViewport();
+});
+
+test('keeps a current preview visible throughout low landscape editing', async ({ page }) => {
+  const frame = await openInOrbitFrame(page, { viewport: { width: 844, height: 390 } });
+  await frame.locator('[data-advanced] summary').click();
+  const format = frame.getByLabel('Format');
+  const motion = frame.getByLabel('Motion speed');
+
+  for (const value of ['portrait', 'square', 'story', 'landscape']) {
+    await format.selectOption(value);
+    await motion.scrollIntoViewIfNeeded();
+    await motion.evaluate(
+      (input, nextValue) => {
+        const range = input as HTMLInputElement;
+        range.value = nextValue;
+        range.dispatchEvent(new Event('input', { bubbles: true }));
+        range.dispatchEvent(new Event('change', { bubbles: true }));
+      },
+      value === 'story' ? '125' : '75',
+    );
+    await expectCanonicalPreview(frame);
+
+    const visibility = await previewVisibility(frame);
+    expect(visibility.posterRatio >= 0.56 || visibility.miniVisible).toBe(true);
+    expect(visibility.miniVisible).toBe(true);
+    expect(visibility.miniRight).toBeLessThanOrEqual(visibility.controlsLeft);
+    expect(visibility.scrollWidth).toBeLessThanOrEqual(visibility.clientWidth + 1);
+  }
+
+  const mini = frame.getByRole('button', { name: 'Zur großen Poster-Vorschau springen' });
+  await mini.click();
+  await expect(frame.locator('[data-poster-frame]')).toBeInViewport({ ratio: 0.56 });
+  await expect(mini).toBeHidden();
+});
+
+test('keeps the large preview sticky when a wide viewport has enough height', async ({ page }) => {
+  const frame = await openInOrbitFrame(page, { viewport: { width: 1024, height: 768 } });
+  await frame.locator('[data-advanced] summary').click();
+  await frame.getByLabel('Motion speed').scrollIntoViewIfNeeded();
+
+  const visibility = await previewVisibility(frame);
+  expect(visibility.posterRatio).toBeGreaterThanOrEqual(0.72);
+  expect(visibility.miniVisible).toBe(false);
+});
+
+test('preserves the preview invariant across the supported viewport matrix', async ({ page }) => {
+  for (const viewport of [
+    { width: 393, height: 852 },
+    { width: 320, height: 568 },
+    { width: 390, height: 500 },
+    { width: 844, height: 390 },
+    { width: 852, height: 393 },
+    { width: 1024, height: 768 },
+    { width: 1440, height: 900 },
+  ]) {
+    const frame = await openInOrbitFrame(page, { viewport });
+    await frame.locator('[data-advanced] summary').click();
+    await frame.getByLabel('Motion speed').scrollIntoViewIfNeeded();
+
+    const visibility = await previewVisibility(frame);
+    expect(
+      visibility.posterRatio >= 0.56 || visibility.miniVisible,
+      `${String(viewport.width)} × ${String(viewport.height)} must retain a preview`,
+    ).toBe(true);
+    expect(visibility.scrollWidth).toBeLessThanOrEqual(visibility.clientWidth + 1);
+  }
+});
+
+test('keeps the visible fallback preview accessible', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'axe-core is validated in Chromium.');
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto(embeddedUrl);
+  await page.locator('[data-advanced] summary').click();
+  await page.getByLabel('Motion speed').scrollIntoViewIfNeeded();
+  await expect(
+    page.getByRole('button', { name: 'Zur großen Poster-Vorschau springen' }),
+  ).toBeVisible();
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(results.violations).toEqual([]);
 });
 
 test('mirrors one canonical poster bitmap for every format, history and animation state', async ({

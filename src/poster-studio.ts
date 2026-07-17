@@ -14,6 +14,10 @@ import type { PosterActions, PosterExportOutcome } from './browser-actions';
 import { readAppContext } from './app-context';
 import { createPosterActions } from './orbit-bridge';
 import { mirrorPosterPreview } from './poster-preview';
+import {
+  createPreviewVisibilityController,
+  type PreviewVisibilityController,
+} from './preview-visibility';
 
 const styles: readonly PosterStyle[] = ['grid', 'orbit', 'signal'];
 const palettes: readonly Exclude<PosterPalette, 'custom'>[] = ['acid', 'ink', 'solar'];
@@ -76,15 +80,13 @@ export class PosterStudio {
   private readonly pauseLabel = this.root?.querySelector<HTMLElement>('[data-pause-label]');
   private readonly abortController = new AbortController();
   private readonly motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
-  private readonly observers: IntersectionObserver[] = [];
+  private previewVisibility: PreviewVisibilityController | undefined;
   private context: CanvasRenderingContext2D | null = null;
   private miniContext: CanvasRenderingContext2D | null = null;
   private frame: number | null = null;
   private lastPaint = 0;
   private startTime = performance.now();
   private paused = false;
-  private posterVisible = true;
-  private controlsVisible = false;
   private history: PosterSettings[] = [];
   private historyIndex = -1;
   private initialized = false;
@@ -136,7 +138,14 @@ export class PosterStudio {
     this.motionPreference.addEventListener('change', this.handleMotionChange, { signal });
     document.addEventListener('visibilitychange', this.handleVisibilityChange, { signal });
 
-    this.initializePreviewObservers();
+    if (this.posterFrame && this.controls && this.miniPreview) {
+      this.previewVisibility = createPreviewVisibilityController({
+        posterFrame: this.posterFrame,
+        controls: this.controls,
+        miniPreview: this.miniPreview,
+      });
+      this.previewVisibility.init();
+    }
     this.paint();
     this.updateAnimation();
   }
@@ -145,7 +154,7 @@ export class PosterStudio {
     if (this.destroyed) return;
     this.destroyed = true;
     this.abortController.abort();
-    this.observers.forEach((observer) => observer.disconnect());
+    this.previewVisibility?.destroy();
     this.stopAnimation();
     this.actions.destroy();
     if (this.miniPreview) this.miniPreview.hidden = true;
@@ -336,6 +345,10 @@ export class PosterStudio {
     if (this.canvas.width !== format.width || this.canvas.height !== format.height) {
       this.canvas.width = format.width;
       this.canvas.height = format.height;
+      this.posterFrame?.style.setProperty(
+        '--poster-aspect-ratio',
+        `${String(format.width)} / ${String(format.height)}`,
+      );
     }
     renderPoster(this.context, settings, phase);
 
@@ -490,35 +503,6 @@ export class PosterStudio {
   private updatePauseButton() {
     this.pauseButton?.setAttribute('aria-pressed', String(this.paused));
     this.pauseLabel?.replaceChildren(this.paused ? 'Resume animation' : 'Pause animation');
-  }
-
-  private initializePreviewObservers() {
-    if (!this.posterFrame || !this.controls || !this.miniPreview) return;
-
-    const posterObserver = new IntersectionObserver(
-      ([entry]) => {
-        this.posterVisible = entry?.isIntersecting ?? true;
-        this.updateMiniPreview();
-      },
-      { threshold: 0.12 },
-    );
-    const controlsObserver = new IntersectionObserver(
-      ([entry]) => {
-        this.controlsVisible = entry?.isIntersecting ?? false;
-        this.updateMiniPreview();
-      },
-      { threshold: 0.01 },
-    );
-
-    posterObserver.observe(this.posterFrame);
-    controlsObserver.observe(this.controls);
-    this.observers.push(posterObserver, controlsObserver);
-  }
-
-  private updateMiniPreview() {
-    if (this.miniPreview) {
-      this.miniPreview.hidden = this.posterVisible || !this.controlsVisible;
-    }
   }
 
   private syncUrl(settings: PosterSettings) {
