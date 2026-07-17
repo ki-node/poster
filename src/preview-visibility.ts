@@ -10,6 +10,7 @@ interface PreviewVisibilityOptions {
   posterFrame: HTMLElement;
   controls: HTMLElement;
   miniPreview: HTMLButtonElement;
+  layoutRoot?: HTMLElement;
   targetWindow?: Window;
   createIntersectionObserver?: (
     callback: IntersectionObserverCallback,
@@ -31,6 +32,9 @@ export const shouldShowMiniPreview = (
 ) =>
   controlsVisible &&
   (miniVisible ? posterRatio < hideMiniAboveRatio : posterRatio < showMiniBelowRatio);
+
+export const canKeepLargePreviewSticky = (viewportWidth: number, viewportHeight: number) =>
+  viewportWidth >= 52 * 16 && viewportHeight >= 32 * 16;
 
 const intersectionRatio = (target: HTMLElement, targetWindow: Window) => {
   const rect = target.getBoundingClientRect();
@@ -58,6 +62,7 @@ export const createPreviewVisibilityController = ({
   posterFrame,
   controls,
   miniPreview,
+  layoutRoot,
   targetWindow = window,
   createIntersectionObserver = (callback, options) => new IntersectionObserver(callback, options),
   createResizeObserver = (callback) => new ResizeObserver(callback),
@@ -80,6 +85,14 @@ export const createPreviewVisibilityController = ({
   const measure = () => {
     scheduledFrame = undefined;
     if (destroyed) return;
+    const viewport = targetWindow.visualViewport;
+    layoutRoot?.classList.toggle(
+      'studio--sticky-preview',
+      canKeepLargePreviewSticky(
+        viewport?.width ?? targetWindow.innerWidth,
+        viewport?.height ?? targetWindow.innerHeight,
+      ),
+    );
     posterRatio = intersectionRatio(posterFrame, targetWindow);
     controlsVisible = intersectionRatio(controls, targetWindow) > 0;
     update();
@@ -134,6 +147,7 @@ export const createPreviewVisibilityController = ({
     if (scheduledFrame !== undefined) targetWindow.cancelAnimationFrame(scheduledFrame);
     miniVisible = false;
     miniPreview.hidden = true;
+    layoutRoot?.classList.remove('studio--sticky-preview');
   };
 
   return { init, destroy };

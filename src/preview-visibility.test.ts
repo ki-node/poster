@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createPreviewVisibilityController, shouldShowMiniPreview } from './preview-visibility';
+import {
+  canKeepLargePreviewSticky,
+  createPreviewVisibilityController,
+  shouldShowMiniPreview,
+} from './preview-visibility';
 
 describe('preview visibility invariant', () => {
   it('uses hysteresis and only shows the fallback while controls are visible', () => {
@@ -8,6 +12,12 @@ describe('preview visibility invariant', () => {
     expect(shouldShowMiniPreview(0.55, true, false)).toBe(true);
     expect(shouldShowMiniPreview(0.65, true, true)).toBe(true);
     expect(shouldShowMiniPreview(0.72, true, true)).toBe(false);
+  });
+
+  it('requires both sufficient width and usable visual viewport height for sticky mode', () => {
+    expect(canKeepLargePreviewSticky(1024, 768)).toBe(true);
+    expect(canKeepLargePreviewSticky(844, 390)).toBe(false);
+    expect(canKeepLargePreviewSticky(800, 900)).toBe(false);
   });
 
   it('initializes once, reacts to observer state and fully disconnects', () => {

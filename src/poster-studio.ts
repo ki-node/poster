@@ -143,6 +143,7 @@ export class PosterStudio {
         posterFrame: this.posterFrame,
         controls: this.controls,
         miniPreview: this.miniPreview,
+        layoutRoot: this.root,
       });
       this.previewVisibility.init();
     }
