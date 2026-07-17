@@ -36,12 +36,13 @@ das Haupt-Canvas bei identischen Bitmap-Abmessungen per `drawImage` gespiegelt u
 über CSS proportional verkleinert. Typografie, Zeilenumbrüche, Grain und Systemgeometrie bleiben
 damit in allen Formaten pixelgleich; das Seitenverhältnis wird nicht gestreckt.
 
-Auf breiten Viewports mit ausreichender Höhe bleibt die linke Bühne viewport-hoch und sticky. Das
-Canvas wird anhand seiner intrinsischen Proportionen innerhalb der verfügbaren Höhe skaliert, auch
-für das hohe Story-Format. Auf niedrigen Landscape-Viewports bleibt das Dokument der einzige
-Scroll-Container; sobald weniger als 56 Prozent des großen Posters sichtbar sind, übernimmt die
-Mini-Vorschau. Sie wird erst oberhalb von 72 Prozent wieder ausgeblendet, damit Rotation, schnelles
-Scrollen und Grenzpositionen nicht flackern. `IntersectionObserver`, `ResizeObserver`, Window- und
+Im zweispaltigen Layout bleibt die vollständige linke Bühne auch auf niedrigen Landscape-Viewports
+viewport-hoch und sticky. Das Canvas wird anhand seiner intrinsischen Proportionen innerhalb der
+verfügbaren Höhe skaliert, einschließlich des hohen Story-Formats; die Controls bestimmen als Teil
+des einzigen Dokument-Scrollers weiterhin die Seitenhöhe. Erst bei einspaltigem Layout, weniger als
+15 rem nutzbarer Visual-Viewport-Höhe oder fehlender Sticky-Unterstützung übernimmt die
+Mini-Vorschau. Dort blendet eine Hysterese sie unter 56 Prozent sichtbarer Hauptvorschau ein und erst
+oberhalb von 72 Prozent wieder aus. `IntersectionObserver`, `ResizeObserver`, Window- und
 Visual-Viewport-Änderungen speisen gemeinsam diese zentrale Sichtbarkeitsinvariante.
 
 ## Lifecycle

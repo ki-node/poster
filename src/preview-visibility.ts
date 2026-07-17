@@ -1,5 +1,7 @@
 const showMiniBelowRatio = 0.56;
 const hideMiniAboveRatio = 0.72;
+const twoColumnViewportWidth = 52 * 16;
+const minimumStickyViewportHeight = 15 * 16;
 
 interface PreviewVisibilityObserver {
   disconnect(): void;
@@ -29,12 +31,14 @@ export const shouldShowMiniPreview = (
   posterRatio: number,
   controlsVisible: boolean,
   miniVisible: boolean,
+  stickyPreviewAvailable = false,
 ) =>
   controlsVisible &&
+  !stickyPreviewAvailable &&
   (miniVisible ? posterRatio < hideMiniAboveRatio : posterRatio < showMiniBelowRatio);
 
 export const canKeepLargePreviewSticky = (viewportWidth: number, viewportHeight: number) =>
-  viewportWidth >= 52 * 16 && viewportHeight >= 32 * 16;
+  viewportWidth >= twoColumnViewportWidth && viewportHeight >= minimumStickyViewportHeight;
 
 const intersectionRatio = (target: HTMLElement, targetWindow: Window) => {
   const rect = target.getBoundingClientRect();
@@ -72,13 +76,19 @@ export const createPreviewVisibilityController = ({
   let posterRatio = 1;
   let controlsVisible = false;
   let miniVisible = false;
+  let stickyPreviewAvailable = false;
   let scheduledFrame: number | undefined;
   const observers: PreviewVisibilityObserver[] = [];
   const abortController = new AbortController();
 
   const update = () => {
     if (destroyed) return;
-    miniVisible = shouldShowMiniPreview(posterRatio, controlsVisible, miniVisible);
+    miniVisible = shouldShowMiniPreview(
+      posterRatio,
+      controlsVisible,
+      miniVisible,
+      stickyPreviewAvailable,
+    );
     miniPreview.hidden = !miniVisible;
   };
 
@@ -86,13 +96,14 @@ export const createPreviewVisibilityController = ({
     scheduledFrame = undefined;
     if (destroyed) return;
     const viewport = targetWindow.visualViewport;
-    layoutRoot?.classList.toggle(
-      'studio--sticky-preview',
+    const supportsSticky = 'position' in targetWindow.document.documentElement.style;
+    stickyPreviewAvailable =
+      supportsSticky &&
       canKeepLargePreviewSticky(
         viewport?.width ?? targetWindow.innerWidth,
         viewport?.height ?? targetWindow.innerHeight,
-      ),
-    );
+      );
+    layoutRoot?.classList.toggle('studio--sticky-preview', stickyPreviewAvailable);
     posterRatio = intersectionRatio(posterFrame, targetWindow);
     controlsVisible = intersectionRatio(controls, targetWindow) > 0;
     update();

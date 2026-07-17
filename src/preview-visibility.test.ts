@@ -12,11 +12,15 @@ describe('preview visibility invariant', () => {
     expect(shouldShowMiniPreview(0.55, true, false)).toBe(true);
     expect(shouldShowMiniPreview(0.65, true, true)).toBe(true);
     expect(shouldShowMiniPreview(0.72, true, true)).toBe(false);
+    expect(shouldShowMiniPreview(0.1, true, true, true)).toBe(false);
   });
 
-  it('requires both sufficient width and usable visual viewport height for sticky mode', () => {
+  it('keeps normal low landscape viewports sticky and reserves fallback for smaller heights', () => {
     expect(canKeepLargePreviewSticky(1024, 768)).toBe(true);
-    expect(canKeepLargePreviewSticky(844, 390)).toBe(false);
+    expect(canKeepLargePreviewSticky(844, 390)).toBe(true);
+    expect(canKeepLargePreviewSticky(852, 393)).toBe(true);
+    expect(canKeepLargePreviewSticky(844, 286)).toBe(true);
+    expect(canKeepLargePreviewSticky(844, 239)).toBe(false);
     expect(canKeepLargePreviewSticky(800, 900)).toBe(false);
   });
 
@@ -26,8 +30,9 @@ describe('preview visibility invariant', () => {
     const observe = vi.fn();
     const targetWindow = new EventTarget() as Window;
     Object.assign(targetWindow, {
-      innerWidth: 844,
-      innerHeight: 390,
+      document: { documentElement: { style: { position: '' } } },
+      innerWidth: 390,
+      innerHeight: 844,
       requestAnimationFrame: vi.fn((callback: FrameRequestCallback) => {
         callback(0);
         return 1;
@@ -84,5 +89,54 @@ describe('preview visibility invariant', () => {
       {} as IntersectionObserver,
     );
     expect(miniPreview.hidden).toBe(true);
+  });
+
+  it('keeps the mini preview hidden while a low landscape sticky stage is available', () => {
+    const callbacks: IntersectionObserverCallback[] = [];
+    const classList = { toggle: vi.fn(), remove: vi.fn() };
+    const targetWindow = new EventTarget() as Window;
+    Object.assign(targetWindow, {
+      document: { documentElement: { style: { position: '' } } },
+      innerWidth: 844,
+      innerHeight: 286,
+      requestAnimationFrame: vi.fn(),
+      cancelAnimationFrame: vi.fn(),
+    });
+    const rect = {
+      top: 0,
+      left: 0,
+      right: 420,
+      bottom: 286,
+      width: 420,
+      height: 286,
+    } as DOMRect;
+    const miniPreview = { hidden: true } as HTMLButtonElement;
+    const controller = createPreviewVisibilityController({
+      posterFrame: { getBoundingClientRect: () => rect } as HTMLElement,
+      controls: { getBoundingClientRect: () => rect } as HTMLElement,
+      miniPreview,
+      layoutRoot: { classList } as unknown as HTMLElement,
+      targetWindow,
+      createIntersectionObserver: (callback) => {
+        callbacks.push(callback);
+        return { observe: vi.fn(), disconnect: vi.fn() };
+      },
+      createResizeObserver: () => ({ observe: vi.fn(), disconnect: vi.fn() }),
+    });
+
+    controller.init();
+    callbacks[1]?.(
+      [{ isIntersecting: true, intersectionRatio: 1 } as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+    callbacks[0]?.(
+      [{ isIntersecting: false, intersectionRatio: 0 } as IntersectionObserverEntry],
+      {} as IntersectionObserver,
+    );
+
+    expect(classList.toggle).toHaveBeenCalledWith('studio--sticky-preview', true);
+    expect(miniPreview.hidden).toBe(true);
+    controller.destroy();
+    expect(classList.remove).toHaveBeenCalledWith('studio--sticky-preview');
   });
 });

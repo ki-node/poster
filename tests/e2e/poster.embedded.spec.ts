@@ -128,16 +128,48 @@ const previewVisibility = async (frame: ReturnType<Page['frameLocator']>) =>
       return (width * height) / (rect.width * rect.height);
     };
     const poster = document.querySelector<HTMLElement>('[data-poster-frame]');
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-poster]');
+    const stage = document.querySelector<HTMLElement>('.studio__stage');
     const mini = document.querySelector<HTMLButtonElement>('[data-mini-preview]');
     const controls = document.querySelector<HTMLElement>('.studio__controls');
+    const badge = document.querySelector<HTMLElement>('.local-badge');
+    const heading = document.querySelector<HTMLElement>('.controls-heading h2');
+    const stageRect = stage?.getBoundingClientRect();
+    const posterRect = poster?.getBoundingClientRect();
+    const canvasRect = canvas?.getBoundingClientRect();
+    const badgeRect = badge?.getBoundingClientRect();
+    const headingRect = heading?.getBoundingClientRect();
     const miniRect = mini?.getBoundingClientRect();
     const controlsRect = controls?.getBoundingClientRect();
 
     return {
       posterRatio: poster ? visibleRatio(poster) : 0,
+      stageTop: stageRect?.top ?? -1,
+      stageBottom: stageRect?.bottom ?? -1,
+      stageLeft: stageRect?.left ?? -1,
+      stageRight: stageRect?.right ?? -1,
+      stageBackground: stage ? getComputedStyle(stage).backgroundColor : '',
+      posterTop: posterRect?.top ?? -1,
+      posterBottom: posterRect?.bottom ?? -1,
+      posterLeft: posterRect?.left ?? -1,
+      posterRight: posterRect?.right ?? -1,
+      canvasWidth: canvasRect?.width ?? 0,
+      canvasHeight: canvasRect?.height ?? 0,
+      canvasIntrinsicWidth: canvas?.width ?? 0,
+      canvasIntrinsicHeight: canvas?.height ?? 0,
       miniVisible: Boolean(mini && !mini.hidden && visibleRatio(mini) > 0),
       miniRight: miniRect?.right ?? 0,
       controlsLeft: controlsRect?.left ?? 0,
+      badgeTop: badgeRect?.top ?? -1,
+      badgeRight: badgeRect?.right ?? -1,
+      badgeBottom: badgeRect?.bottom ?? -1,
+      badgeLeft: badgeRect?.left ?? -1,
+      headingTop: headingRect?.top ?? -1,
+      headingRight: headingRect?.right ?? -1,
+      headingBottom: headingRect?.bottom ?? -1,
+      headingLeft: headingRect?.left ?? -1,
+      viewportHeight: innerHeight,
+      viewportWidth: innerWidth,
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
     };
@@ -235,37 +267,62 @@ test('keeps preview, seed, remix, undo and redo usable in the mobile iframe', as
   await expect(frame.locator('[data-poster-frame]')).toBeInViewport();
 });
 
-test('keeps a current preview visible throughout low landscape editing', async ({ page }) => {
-  const frame = await openInOrbitFrame(page, { viewport: { width: 844, height: 390 } });
-  await frame.locator('[data-advanced] summary').click();
-  const format = frame.getByLabel('Format');
-  const motion = frame.getByLabel('Motion speed');
-
-  for (const value of ['portrait', 'square', 'story', 'landscape']) {
-    await format.selectOption(value);
-    await motion.scrollIntoViewIfNeeded();
-    await motion.evaluate(
-      (input, nextValue) => {
-        const range = input as HTMLInputElement;
-        range.value = nextValue;
-        range.dispatchEvent(new Event('input', { bubbles: true }));
-        range.dispatchEvent(new Event('change', { bubbles: true }));
-      },
-      value === 'story' ? '125' : '75',
+test('keeps the complete stage sticky throughout low landscape editing', async ({ page }) => {
+  for (const viewport of [
+    { width: 844, height: 390 },
+    { width: 852, height: 393 },
+  ]) {
+    const frame = await openInOrbitFrame(page, { viewport });
+    const badge = frame.locator('.local-badge');
+    await expect(badge).toHaveText(/Local only/u);
+    const header = await previewVisibility(frame);
+    expect(header.badgeLeft).toBeGreaterThanOrEqual(header.controlsLeft);
+    expect(header.badgeRight).toBeLessThanOrEqual(header.viewportWidth + 1);
+    const headerOverlaps = !(
+      header.badgeLeft >= header.headingRight ||
+      header.badgeRight <= header.headingLeft ||
+      header.badgeTop >= header.headingBottom ||
+      header.badgeBottom <= header.headingTop
     );
-    await expectCanonicalPreview(frame);
+    expect(headerOverlaps).toBe(false);
 
-    const visibility = await previewVisibility(frame);
-    expect(visibility.posterRatio >= 0.56 || visibility.miniVisible).toBe(true);
-    expect(visibility.miniVisible).toBe(true);
-    expect(visibility.miniRight).toBeLessThanOrEqual(visibility.controlsLeft);
-    expect(visibility.scrollWidth).toBeLessThanOrEqual(visibility.clientWidth + 1);
+    await frame.locator('[data-advanced] summary').click();
+    const format = frame.getByLabel('Format');
+    const motion = frame.getByLabel('Motion speed');
+    const stageBefore = await previewVisibility(frame);
+
+    for (const value of ['portrait', 'square', 'story', 'landscape']) {
+      await format.selectOption(value);
+      await motion.scrollIntoViewIfNeeded();
+      await motion.evaluate(
+        (input, nextValue) => {
+          const range = input as HTMLInputElement;
+          range.value = nextValue;
+          range.dispatchEvent(new Event('input', { bubbles: true }));
+          range.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+        value === 'story' ? '125' : '75',
+      );
+      await expectCanonicalPreview(frame);
+
+      const visibility = await previewVisibility(frame);
+      expect(visibility.stageTop).toBeCloseTo(stageBefore.stageTop, 0);
+      expect(visibility.stageTop).toBeCloseTo(0, 0);
+      expect(visibility.stageBottom).toBeCloseTo(visibility.viewportHeight, 0);
+      expect(visibility.stageBackground).toBe('rgb(21, 21, 21)');
+      expect(visibility.posterTop).toBeGreaterThanOrEqual(visibility.stageTop);
+      expect(visibility.posterBottom).toBeLessThanOrEqual(visibility.stageBottom + 1);
+      expect(visibility.posterLeft).toBeGreaterThanOrEqual(visibility.stageLeft);
+      expect(visibility.posterRight).toBeLessThanOrEqual(visibility.stageRight + 1);
+      expect(visibility.canvasWidth / visibility.canvasHeight).toBeCloseTo(
+        visibility.canvasIntrinsicWidth / visibility.canvasIntrinsicHeight,
+        2,
+      );
+      expect(visibility.posterRatio).toBeGreaterThanOrEqual(0.99);
+      expect(visibility.miniVisible).toBe(false);
+      expect(visibility.scrollWidth).toBeLessThanOrEqual(visibility.clientWidth + 1);
+    }
   }
-
-  const mini = frame.getByRole('button', { name: 'Zur großen Poster-Vorschau springen' });
-  await mini.click();
-  await expect(frame.locator('[data-poster-frame]')).toBeInViewport({ ratio: 0.56 });
-  await expect(mini).toBeHidden();
 });
 
 test('keeps the large preview sticky when a wide viewport has enough height', async ({ page }) => {
@@ -276,6 +333,21 @@ test('keeps the large preview sticky when a wide viewport has enough height', as
   const visibility = await previewVisibility(frame);
   expect(visibility.posterRatio).toBeGreaterThanOrEqual(0.72);
   expect(visibility.miniVisible).toBe(false);
+});
+
+test('keeps the low landscape stage and controls header accessible', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName === 'webkit', 'axe-core is validated in Chromium.');
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.goto(embeddedUrl);
+  await page.locator('[data-advanced]').evaluate((details) => details.setAttribute('open', ''));
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(results.violations).toEqual([]);
 });
 
 test('preserves the preview invariant across the supported viewport matrix', async ({ page }) => {
@@ -303,7 +375,7 @@ test('preserves the preview invariant across the supported viewport matrix', asy
 
 test('keeps the visible fallback preview accessible', async ({ page, browserName }) => {
   test.skip(browserName === 'webkit', 'axe-core is validated in Chromium.');
-  await page.setViewportSize({ width: 844, height: 390 });
+  await page.setViewportSize({ width: 390, height: 500 });
   await page.goto(embeddedUrl);
   await page.locator('[data-advanced] summary').click();
   await page.getByLabel('Motion speed').scrollIntoViewIfNeeded();
