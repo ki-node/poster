@@ -36,13 +36,23 @@ das Haupt-Canvas bei identischen Bitmap-Abmessungen per `drawImage` gespiegelt u
 über CSS proportional verkleinert. Typografie, Zeilenumbrüche, Grain und Systemgeometrie bleiben
 damit in allen Formaten pixelgleich; das Seitenverhältnis wird nicht gestreckt.
 
+Im zweispaltigen Layout bleibt die vollständige linke Bühne auch auf niedrigen Landscape-Viewports
+viewport-hoch und sticky. Das Canvas wird anhand seiner intrinsischen Proportionen innerhalb der
+verfügbaren Höhe skaliert, einschließlich des hohen Story-Formats; die Controls bestimmen als Teil
+des einzigen Dokument-Scrollers weiterhin die Seitenhöhe. Erst bei einspaltigem Layout, weniger als
+15 rem nutzbarer Visual-Viewport-Höhe oder fehlender Sticky-Unterstützung übernimmt die
+Mini-Vorschau. Dort blendet eine Hysterese sie unter 56 Prozent sichtbarer Hauptvorschau ein und erst
+oberhalb von 72 Prozent wieder aus. `IntersectionObserver`, `ResizeObserver`, Window- und
+Visual-Viewport-Änderungen speisen gemeinsam diese zentrale Sichtbarkeitsinvariante.
+
 ## Lifecycle
 
-`mountPosterForge()` besitzt die einmalige Initialisierung pro Dokument. `DOMContentLoaded` und
-`pagehide` werden an einer Stelle verwaltet. `PosterStudio.init()` und `destroy()` sind idempotent;
-der zugehörige `AbortController` entfernt Listener, Observer werden getrennt und ein laufender
-Animation Frame wird beendet. Ein neu geöffnetes iframe erzeugt anschließend genau eine frische
-Instanz, ohne Handler aus einem entfernten Dokument weiterzuführen.
+`mountPosterForge()` besitzt die einmalige Initialisierung pro Dokument. `DOMContentLoaded`,
+`pagehide` und `pageshow` werden an einer Stelle verwaltet. `PosterStudio.init()` und `destroy()`
+sind idempotent; der zugehörige `AbortController` entfernt Listener, Vorschau- und Resize-Observer
+werden getrennt und ein laufender Animation Frame wird beendet. Eine Wiederherstellung aus dem
+Back-Forward-Cache oder ein neu geöffnetes iframe erzeugt anschließend genau eine frische Instanz,
+ohne Handler aus einem entfernten Dokument weiterzuführen.
 
 ## Browser-Aktionen und Export-Bridge
 

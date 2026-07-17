@@ -32,7 +32,7 @@ html {
 body {
   min-width: 20rem;
   margin: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
   background:
     linear-gradient(90deg, transparent 49.9%, rgba(21, 21, 21, 0.045) 50%, transparent 50.1%)
       center / 4rem 4rem,
@@ -218,6 +218,7 @@ label {
 .poster-frame {
   position: relative;
   width: min(100%, 36rem);
+  aspect-ratio: var(--poster-aspect-ratio, 3 / 4);
   margin: 0 auto;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.35);
@@ -244,6 +245,7 @@ label {
 }
 
 .studio__controls {
+  min-width: 0;
   padding: clamp(2rem, 6vw, 5rem) var(--page-right) clamp(2rem, 6vw, 5rem) var(--page-left);
 }
 
@@ -280,11 +282,18 @@ label {
 
 .controls-heading {
   display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 2rem;
   border-bottom: 1px solid var(--ink);
+}
+
+.controls-heading > div {
+  min-width: 0;
+  flex: 1 1 14rem;
 }
 
 .controls-heading h2 {
@@ -308,6 +317,7 @@ label {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .local-badge i {
@@ -815,8 +825,32 @@ html[data-app-context='embedded'] .mini-preview {
 
   .studio__stage {
     display: grid;
-    align-content: center;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: clamp(0.5rem, 2dvh, 1.3rem);
+    align-self: start;
+    align-content: stretch;
     border-right: 1px solid var(--ink);
+  }
+
+  .poster-frame {
+    width: min(100%, 36rem);
+    max-width: min(100%, 36rem);
+    max-height: 100%;
+    place-self: center;
+  }
+
+  .poster-frame canvas {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .stage-meta {
+    margin-top: 0;
   }
 
   .studio__controls {
@@ -824,7 +858,9 @@ html[data-app-context='embedded'] .mini-preview {
   }
 
   .mini-preview {
-    display: none !important;
+    right: auto;
+    left: max(0.75rem, var(--safe-left));
+    width: clamp(4.25rem, 10vw, 6rem);
   }
 
   .action-grid {
@@ -843,6 +879,57 @@ html[data-app-context='embedded'] .mini-preview {
   .control-grid > :last-child:nth-child(odd),
   .range-grid > :last-child:nth-child(odd) {
     grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 52rem) {
+  .studio--sticky-preview .studio__stage {
+    position: sticky;
+    top: 0;
+  }
+
+  .studio--sticky-preview .poster-frame {
+    width: var(--poster-display-width);
+    height: var(--poster-display-height);
+  }
+
+  .studio--sticky-preview .poster-frame canvas {
+    height: 100%;
+  }
+}
+
+@media (min-width: 52rem) and (max-height: 32rem) {
+  .studio__stage {
+    gap: 0.45rem;
+    padding: clamp(0.5rem, 2dvh, 0.75rem) max(clamp(0.5rem, 2vw, 1rem), var(--safe-right))
+      clamp(0.5rem, 2dvh, 0.75rem) max(clamp(0.5rem, 2vw, 1rem), var(--safe-left));
+  }
+
+  .poster-frame {
+    box-shadow: 0.4rem 0.4rem 0 var(--pink);
+  }
+
+  .stage-meta {
+    gap: 0.5rem;
+    font-size: 0.52rem;
+    letter-spacing: 0.05em;
+  }
+
+  .controls-heading {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-height: 28rem) {
+  .mini-preview {
+    width: 4.5rem;
+    padding: 0.25rem;
+    box-shadow: 0.25rem 0.25rem 0 var(--pink);
+  }
+
+  .mini-preview span {
+    padding-top: 0.2rem;
+    font-size: 0.42rem;
   }
 }
 

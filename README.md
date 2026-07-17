@@ -9,7 +9,8 @@ Poster Forge bietet:
 - vier Ausgabeformate und hochauflösenden PNG-Export
 - manuell nutzbare Seeds sowie teilbare Konfigurationslinks
 - Remix, vollständige Zufallskompositionen, Sperren, Undo und Redo
-- eine pixelgleiche, proportional skalierte Mini-Vorschau der kanonischen Posterfläche
+- eine responsive, bei ausreichender Höhe sticky Hauptvorschau
+- eine adaptive, pixelgleiche Mini-Vorschau, sobald die Hauptvorschau nicht ausreichend sichtbar ist
 
 ## Entwicklung
 
@@ -68,6 +69,11 @@ npm run test:reproducible
 ```
 
 Das Quality Gate prüft Formatierung, ESLint, Stylelint, striktes TypeScript, Unit-Tests, Produktionsbuild, gzip-Budgets, mobile und Desktop-Browser, iPhone/WebKit, kompakten 320-Pixel-Reflow und axe WCAG A/AA.
+
+Die Browsermatrix deckt außerdem niedrige Landscape-Viewports bis `844 × 390` ab. Während der
+Arbeit in den Studio-Controls bleibt dort die vollständige, passend skalierte Bühne sticky. Die
+kanonisch gespiegelte Mini-Vorschau bleibt als Fallback für einspaltige oder durch die
+Bildschirmtastatur stark verkleinerte Viewports erhalten.
 
 Zusätzlich validiert es beide Build-Kontexte, relative und lokal auflösbare Embedded-Assets,
 Offline-Nutzung unter einem verschachtelten Pfad, deterministische Provenienz, wiederholbaren

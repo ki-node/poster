@@ -30,13 +30,22 @@ export const mountPosterForge = ({
     app.init();
   };
 
+  const stop = () => {
+    app?.destroy();
+    app = undefined;
+  };
+
+  const handlePageHide = () => {
+    stop();
+  };
+
   const destroy = () => {
     if (destroyed) return;
     destroyed = true;
     targetDocument.removeEventListener('DOMContentLoaded', start);
-    targetWindow.removeEventListener('pagehide', destroy);
-    app?.destroy();
-    app = undefined;
+    targetWindow.removeEventListener('pagehide', handlePageHide);
+    targetWindow.removeEventListener('pageshow', start);
+    stop();
   };
 
   if (targetDocument.readyState === 'loading') {
@@ -45,7 +54,8 @@ export const mountPosterForge = ({
     start();
   }
 
-  targetWindow.addEventListener('pagehide', destroy, { once: true });
+  targetWindow.addEventListener('pagehide', handlePageHide);
+  targetWindow.addEventListener('pageshow', start);
 
   return { destroy };
 };
